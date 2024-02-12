@@ -7,17 +7,21 @@ using UnityEngine.SceneManagement;
 
 public class PlayerControl : MonoBehaviour
 {
-    [SerializeField] private float verticalForce;               // referencia a la velocidad vertical
-    [SerializeField] private float gravityValue;                // referencia a la gravedad del juego
-    [SerializeField] private float timerestartDelay = 0.5f;     // tiempo = 1 sg de retraso en reiniciar la escena
-    [SerializeField] private GameObject torus;                  // referencia al torus
-    [SerializeField] private ParticleSystem playerParticles;    // referencia a las partículas del player cuando colisiona
-    [SerializeField] private GameManager gameManager;           // referencia al GameManager
-    
+    [SerializeField] private float verticalForce;                   // referencia a la velocidad vertical
+    [SerializeField] private float gravityValue;                    // referencia a la gravedad del juego
+    [SerializeField] private float timerestartDelay = 0.5f;         // tiempo = 1 sg de retraso en reiniciar la escena
+    [SerializeField] private GameObject torus;                      // referencia al torus
+    [SerializeField] private ParticleSystem playerParticles;        // referencia a las partículas del player cuando colisiona
+    [SerializeField] private ParticleSystem playerParticlesShump;   // referencia a las partículas del player cuando salta
+    [SerializeField] private GameManager gameManager;               // referencia al GameManager
+
+    private ParticleSystem playerParticlesShumpInstance;            // referencia a la instancia actual del sistema de partículas de salto
+
     private Color[] colorPlayer;                    // referencia a los colores del player 
     private Color currentColorPlayer;               // referencia al color del player actual
     private Renderer playerRenderer;                // referencia del Renderer del player para cambiar el material
     private List<int> detectedTorusIDs;             // referencia a la lista de torus en escena
+    private bool hasJumpSoundPlayed = false;        // referencia para saber si ya se reprodujo el sonido de salto
 
     Rigidbody playerRigidBody;      // referencia al rigidbody del player
    
@@ -40,16 +44,52 @@ public class PlayerControl : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        /*  si clic en la tecla space =>
-         *      frena al player
-         *      define un vector fuerza con los valores deseados de movimiento
-         *      aplica la fuerza definida al player
+        /*  si clic en la tecla space => llama al método Shump()
+         *  sino => restablece la variable de control de reproducción de sonido en el próximo salto    
          */
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            playerRigidBody.velocity = Vector3.zero;        
-            Vector3 vectorForce = new (0, verticalForce, 0);        
-            playerRigidBody.AddForce(vectorForce);
+            Shump();
+
+        }
+        else
+        {
+            hasJumpSoundPlayed = false;
+        }
+    }
+
+    // Gestiona el salto del player
+    private void Shump()
+    {
+        /*  frena al player
+         *  define un vector fuerza con los valores deseados de movimiento
+         *  aplica la fuerza definida al player
+         *  si la variable de salto = true =>
+         *      si la instancia de partículas no es nula =>
+         *          destruye la instancia anterior de las partículas de salto si existe
+         *          si el prefab de partículas no es nulo =>
+         *              instancia el prefabd e partículas en la escena y jerarquía
+         *              reproduce el sonido de salto
+         *              el sonido de salto se ha reproducido en este salto, cambia l avariable hasJumpSoundPlayed = true
+         */
+        playerRigidBody.velocity = Vector3.zero;
+        Vector3 vectorForce = new(0, verticalForce, 0);
+        playerRigidBody.AddForce(vectorForce);
+
+        if (!hasJumpSoundPlayed)
+        {
+            if (playerParticlesShumpInstance != null)
+            {
+                Destroy(playerParticlesShumpInstance.gameObject);
+            }
+
+            if (playerParticlesShump != null)
+            {
+                playerParticlesShumpInstance = Instantiate(playerParticlesShump, transform.position, Quaternion.identity);
+                playerParticlesShumpInstance.Play();
+            }
+
+            hasJumpSoundPlayed = true;
         }
     }
 
@@ -139,7 +179,7 @@ public class PlayerControl : MonoBehaviour
  
         if (collision.gameObject.CompareTag("PlataformEnd"))
         {
-            gameManager.AddScore(GetTorusPoints());
+            gameManager.AddScore(GetTotalTorusPoints());
             gameObject.SetActive(false);
             Instantiate(playerParticles, transform.position, Quaternion.identity);
             Invoke(nameof(LoadNextScene), timerestartDelay + .5f);
@@ -206,5 +246,34 @@ public class PlayerControl : MonoBehaviour
             }
         }
         return 0;
+    }
+
+    // Obtener puntos de todos los torus en la escena
+    private int GetTotalTorusPoints()
+    {
+        /*
+         * inicializa la variable totalPoints = 0
+         * define una lista torusObject de GameObject con el tag "Torus" en la escena
+         * por cada torusObject encontrado =>
+         *  obtiene el componente TorusRotation del GameObject actual
+         *  si se encuentra el componente TorusRotation no nulo =>
+         *      sumar sus puntos a totalPoints
+         *  retorna los puntos      
+         */
+
+        int totalPoints = 0;
+        
+        GameObject[] torusObjects = GameObject.FindGameObjectsWithTag("Torus");
+
+        foreach (GameObject torusObject in torusObjects)
+        {
+            
+            if (torusObject.TryGetComponent<TorusRotation>(out var torusRotation))
+            {
+                totalPoints += torusRotation.GetPointsTorus();
+            }
+        }
+
+        return totalPoints;
     }
 }
