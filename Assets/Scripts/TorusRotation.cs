@@ -40,16 +40,19 @@ public class TorusRotation : MonoBehaviour
         transform.localScale = new Vector3(scale, scale, scale);
     }
 
+    // Retorna los puntos asignados al torus (dependerá de la dificultad del torus - configuración manual)
     public int GetPointsTorus()
     {
         return points;
     }
 
+    // Retorna la escala asignada al torus (dependerá de la dificultad del torus - configuración manual)
     public float GetScaleTorus()
     {
         return initialScale;
     }
 
+    // Retorna la velocidad de giro asiganda al torus (dependerá de la dificultad del torus - configuración manual)
     public float GetRotateTorus()
     {
         return rotationSpeedTorus;

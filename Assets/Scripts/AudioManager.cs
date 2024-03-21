@@ -6,7 +6,7 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager instance;        // referencia Singleton a AudioManager
 
-    public List<AudioClip> audioClips;         // referencia a los audios a utilizar en el juego
+    public List<AudioClip> audioClips;          // referencia a los audios a utilizar en el juego
                                                                  
     private AudioSource audioSource;            // referencia a la fuente de audio
 
@@ -23,7 +23,7 @@ public class AudioManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        // instancia la fuente de audio y habilita el loop de la fuente
+        // Instancia audioSource y habilita el loop de Source
         if (!TryGetComponent<AudioSource>(out audioSource))
         {
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -31,7 +31,7 @@ public class AudioManager : MonoBehaviour
         audioSource.loop = true;
     }
 
-    // Reproduce la fuente de adio
+    // Reproduce audioSource
     public void PlayMusic(AudioClip music)
     {
         audioSource.clip = music;

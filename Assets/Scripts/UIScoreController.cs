@@ -26,7 +26,7 @@ public class UIScoreController : MonoBehaviour
     {
         // verifica si el componente TextMeshProUGUI está asignado
         // obtiene el número de la escena actual
-        // muestra en pantalla el número de la escena en el TextMeshProUGUI
+        // asigna el número de la escena en el TextMeshProUGUI sceneLevelNumber
         // obtiene una instancia de la cámara principal
 
         if (sceneLevelNumber == null)
@@ -51,7 +51,7 @@ public class UIScoreController : MonoBehaviour
         float closestDistance = Mathf.Infinity;
 
         /*  por cada torus en la lista de torus de la escena =>
-         *      crea un vector3 screenPoint = con la posición del torus en el mundo, para esto se convierte la posición de mundo (torus.transform.position) a coordenadas de pantalla con Camera.WorldToScreenPoint, en pixeles
+         *      crea un vector3 screenPoint = con la posición del torus en el mundo, se convierte la posición de mundo (torus.transform.position) a coordenadas de pantalla con Camera.WorldToScreenPoint (pixeles)
          *      si el torus está dentro de los límites de la pantalla =>
          *          verifica si las coordenadas x y y del punto de la pantalla están dentro de los límites de la pantalla (entre 0 y el ancho/altura de la pantalla) y si la coordenada > 0, el objeto está delante de la cámara
          *          calcula la distancia entre la cámara y el torus y se guarda en la variable distance
@@ -78,11 +78,15 @@ public class UIScoreController : MonoBehaviour
         // muestra los parámetros del torus más cercano
         if (currentTorus != null)
         {
+            /*
+             * muestra en UIParametersTorus: velocidad ; escala ; puntos asignados a ese torus en particular
+             */
             velocityNumberTorus.text = currentTorus.GetRotateTorus().ToString();
             scaleNumberTorus.text = currentTorus.GetScaleTorus().ToString();
             pointsNumberTorus.text = currentTorus.GetPointsTorus().ToString();
 
             // ajusta y muestra la posición en el eje Y del panel para que coincida con la posición del Torus en la pantalla
+            // el panel del torus queda fija en la posición del torus, y el torus se mueve con el desplazamiento de la cámara
             Vector3 torusScreenPosition = mainCamera.WorldToScreenPoint(currentTorus.transform.position);
             Vector3 newPositionPanelParametersTorus = panelParametersTorus.transform.position;
             newPositionPanelParametersTorus.y = torusScreenPosition.y;
@@ -90,9 +94,10 @@ public class UIScoreController : MonoBehaviour
         }
     }
 
+    // Gestiona el botón Return
     public void ReturnToMenu()
     {
-        // Este método se llama cuando se hace clic en ReturnButton y pone el score = 0
+        // clic en ReturnButton: pone el score = 0 y carga la esena = 0 (menú inicial)
         //Debug.Log("menu");
         gameManager.ResetScore();
         gameManager.LoadScene(endScene);

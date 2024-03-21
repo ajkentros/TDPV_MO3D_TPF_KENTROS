@@ -9,13 +9,13 @@ public class PlayerControl : MonoBehaviour
 {
     [SerializeField] private float verticalForce;                   // referencia a la velocidad vertical
     [SerializeField] private float gravityValue;                    // referencia a la gravedad del juego
-    [SerializeField] private float timerestartDelay = 0.5f;         // tiempo = 1 sg de retraso en reiniciar la escena
+    [SerializeField] private float timerestartDelay = 0.5f;         // tiempo de retraso en reiniciar la escena
     [SerializeField] private GameObject torus;                      // referencia al torus
     [SerializeField] private ParticleSystem playerParticles;        // referencia a las partículas del player cuando colisiona
     [SerializeField] private ParticleSystem playerParticlesShump;   // referencia a las partículas del player cuando salta
     [SerializeField] private GameManager gameManager;               // referencia al GameManager
 
-    private ParticleSystem playerParticlesShumpInstance;            // referencia a la instancia actual del sistema de partículas de salto
+    private ParticleSystem playerParticlesShumpInstance;            // referencia a la instancia del sistema de partículas de salto
 
     private Color[] colorPlayer;                    // referencia a los colores del player 
     private Color currentColorPlayer;               // referencia al color del player actual
@@ -32,9 +32,9 @@ public class PlayerControl : MonoBehaviour
     void Start()
     {
         playerRigidBody = GetComponent<Rigidbody>();        // obtiene el rigidbody del player
-        playerRenderer = GetComponent<Renderer>();          // obtener el Renderer del player
+        playerRenderer = GetComponent<Renderer>();          // obtiene el Renderer del player
         Physics.gravity = new Vector3(0, gravityValue, 0);  // cambiar la gravedad
-        detectedTorusIDs = new List<int>();
+        detectedTorusIDs = new List<int>();                 // lista de las partes del torus
 
         InitializeColorPlayer();     // llama a la función para inicializar el arreglo de colores
 
@@ -50,7 +50,6 @@ public class PlayerControl : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Shump();
-
         }
         else
         {
@@ -61,19 +60,22 @@ public class PlayerControl : MonoBehaviour
     // Gestiona el salto del player
     private void Shump()
     {
-        /*  frena al player
+        /*  
+         *  frena al player
          *  define un vector fuerza con los valores deseados de movimiento
          *  aplica la fuerza definida al player
          *  si la variable de salto = true =>
          *      si la instancia de partículas no es nula =>
          *          destruye la instancia anterior de las partículas de salto si existe
          *          si el prefab de partículas no es nulo =>
-         *              instancia el prefabd e partículas en la escena y jerarquía
+         *              instancia el prefab de partículas en la escena y jerarquía
          *              reproduce el sonido de salto
          *              el sonido de salto se ha reproducido en este salto, cambia l avariable hasJumpSoundPlayed = true
          */
         playerRigidBody.velocity = Vector3.zero;
+        
         Vector3 vectorForce = new(0, verticalForce, 0);
+        
         playerRigidBody.AddForce(vectorForce);
 
         if (!hasJumpSoundPlayed)
@@ -96,10 +98,10 @@ public class PlayerControl : MonoBehaviour
     // Gestiona los colores que puede tomar el player
     void InitializeColorPlayer()
     {
-        /* si no hay torus no está asignado => mensaje
+        /* si no hay torus => mensaje
          * inicializa el arreglo de colores
          * verifica si el hijo tiene un MeshRenderer
-         * si el children no es nulo => accede al material compartido en lugar del material directo
+         * si el children no es nulo => el color del Player = accede al material (color) del child del Torus
          * sino tiene MeshRenderer => asigna un color por defecto (blanco)
         */
         if (torus == null)
@@ -129,17 +131,15 @@ public class PlayerControl : MonoBehaviour
     // Gestiona el cambio de color del player
     private void ChangeColorPlayer()
     {
-        /*  obtiene un núemro aleatorio entre 0 y la longuitud del arreglo
+        /*  obtiene un número aleatorio entre 0 y la longuitud del arreglo
          *  asigna a la variable color actual del player con el color del arreglo de colores
          *  cambia el color del material del player
          */
-
         int randomNumber = Random.Range(0, colorPlayer.Length);
         currentColorPlayer = colorPlayer[randomNumber];
         playerRenderer.material.color = currentColorPlayer;
-
-
     }
+
     //Gestiona las colisiones
     private void OnTriggerEnter(Collider collision)
     {
@@ -149,7 +149,6 @@ public class PlayerControl : MonoBehaviour
          * gestiona colisión con el PlataformEnd
          * gestiona colisión con el torus
          */
-
         CollidePlayerColorChanger(collision);
 
         ColliderPlataformEnd(collision);
@@ -159,10 +158,10 @@ public class PlayerControl : MonoBehaviour
 
     }
 
-    // Gestiona la colision del player con el PlayerColorChanger
+    // Gestiona la colision del player con el PlayerColorChanger (esfera que cambia el color del playaer9 
     private void CollidePlayerColorChanger(Collider collision)
     {
-        //si el objeto colisionado es PlayerColorChanger => cambio color del player + destruye el PlayerColorChanger y retorna
+        // Si el objeto colisionado es PlayerColorChanger (aparece en el Level 2,3, 4, y 5) => cambio color del player + destruye el PlayerColorChanger y retorna
         
         if (collision.gameObject.CompareTag("PlayerColorChanger"))
         {
@@ -172,11 +171,17 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
-    // Gestiona el cambio de escena
+    // Gestiona la colisión con la PlatrformEnd (fin del Level)
     private void ColliderPlataformEnd(Collider collision)
     {
-        // si el objeto colisionado es PlataformEnd => desactiva e player + instancia el sistema de partìculas + carga siguiente escena 
- 
+        /*
+         * Si el objeto colisionado es PlataformEnd => 
+         *  suma puntos al score
+         *  desactiva el player 
+         *  instancia el sistema de partìculas (explosión al colisonar con la PLatformEnd)
+         *  carga siguiente escena despuñes de un tiempo de retraso
+         */
+
         if (collision.gameObject.CompareTag("PlataformEnd"))
         {
             gameManager.AddScore(GetTotalTorusPoints());
@@ -190,15 +195,16 @@ public class PlayerControl : MonoBehaviour
     // Gestiona la colisión con el torus
     private void ColliderTorus(Collider collision)
     {
-
-        /*  si la colisión es con un objeto con el tag "Torus" =>
-         *      asigna al hijo del torus que ha colisionado con player el MeshRenderer
+        /*  
+         *  Si la colisión es con un objeto con el tag "Torus" =>
+         *      asigna a torusChildRenderer = el MeshRenderer del hijo del torus que ha colisionado con player 
          *      si el el renderer del hijo del torus no es nulo =>
-         *          obtiene el color del hijo del torus con el que se ha colisionado
-         *          si el color del jugador coincide con el color del hijo del torus => 
+         *          asigna a torusChildColor = el color del hijo del torus con el que se ha colisionado con el player
+         *          si el color del player no es = color del hijo del torus => 
+         *              decermenta al scrore los puntos correspondientes al tourus activo en ese momento
          *              desactiva el Player
-         *              instancia el efecto de partículas
-         *              reinicia la escena
+         *              instancia el efecto de partículas (explosión de choque con un children del torus con distinto color al player
+         *              reinicia la escena despues de un tiempo.
          */
 
         if (collision.gameObject.CompareTag("Torus"))
@@ -214,7 +220,7 @@ public class PlayerControl : MonoBehaviour
                     gameManager.DecreaseScore(GetTorusPoints());
                     gameObject.SetActive(false);
                     Instantiate(playerParticles, transform.position, Quaternion.identity);
-                    Invoke(nameof(RestarScene), timerestartDelay);
+                    Invoke(nameof(RestarScene), timerestartDelay + .5f);
                 }
             }
         }
@@ -228,16 +234,22 @@ public class PlayerControl : MonoBehaviour
         gameManager.LoadScene(activeSceneIndex);
     }
 
-    // Gestiona la carga de la escena actual
+    // Gestiona el reinicio y carga de la escena actual
     private void RestarScene()
     {
         int activeSceneIndex = SceneManager.GetActiveScene().buildIndex;
         gameManager.LoadScene(activeSceneIndex);
     }
 
-    // Obtener puntos del toroide
+    // Obtener puntos del torus
     private int GetTorusPoints()
     {
+        /*
+         * si el GameObject torus no es nulo =>
+         *  si la variable del componente TorusRotation (script) del torus no es nula =>
+         *      retorna los puntos asignados a ese torus llamando al método GetPointsTorus()
+         */
+
         if (torus != null)
         {
             if (torus.TryGetComponent<TorusRotation>(out var torusRotation))
